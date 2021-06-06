@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: site
+    container_name: apache
+    ports:
+      - '8080:80'
+    volumes:
+      - ./iandy:/var/www/html
+      - ./server/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./server/apache2.conf:/etc/apache2/apache2.conf
+    networks:
+      - mariadb
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    volumes:
+      - "./db_data/db:/var/lib/mysql"
+      - "./db_data/dump:/docker-entrypoint-initdb.d"
+    ports:
+      - 3306:3306
+    environment:
+      TZ: Europe/Paris
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_ROOT_PASSWORD: defaultpassword
+      MYSQL_DATABASE: zks_iandy
+      MYSQL_USER: default
+      MYSQL_PASSWORD: defaultpassword
+    restart: unless-stopped
+    networks:
+      - mariadb
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    networks:
+      - mariadb
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - 8183:80
+
+networks:
+  mariadb:
+    driver: bridge
